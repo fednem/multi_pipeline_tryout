@@ -8,19 +8,19 @@ library(magrittr)
 library(Biocomb)
 library(FNN)
 source("sd_thresholding_for_continuous_outcome_variables.s")
-source("select_features_relieff_derivatives_threshold.s")
+source("calculate_features_threshold_based_on_second_derivative_fselector.s")
 source("scale_data_frame.s")
 
 #preparing all images modalities for following steps: i.e. reshape all images modalities to n by v matrix
 print("preparing matrix")
-gm_matrix <- reshape_images_for_pipeline("D:/multi_pipeline_tryout_imaging/gm/", "gm_mask.nii.gz", "s8")
-wm_matrix <- reshape_images_for_pipeline("D:/multi_pipeline_tryout_imaging/wm/", "wm_mask.nii.gz", "s8")
-rs_matrix <- reshape_images_for_pipeline("D:/multi_pipeline_tryout_imaging/rs_dmn_mpfc/", "rs_mask.nii.gz", "resampled")
+gm_matrix <- reshape_images_for_pipeline("/mnt/d/multi_pipeline_tryout_imaging/gm/", "gm_mask.nii.gz", "s8")
+wm_matrix <- reshape_images_for_pipeline("/mnt/d/multi_pipeline_tryout_imaging/wm/", "wm_mask.nii.gz", "s8")
+rs_matrix <- reshape_images_for_pipeline("/mnt/d/multi_pipeline_tryout_imaging/rs_dmn_mpfc/", "rs_mask.nii.gz", "resampled")
 print("finished preparing matrix")
 #factor out nuisance variable
 #read nuisance variables file
 print("preparing variables")
-nuisance_and_outcome_variables <- read_delim("D:/multi_pipeline_tryout_imaging/nuisance_and_outcome_variables.txt",delim = "\t")
+nuisance_and_outcome_variables <- read_delim("/mnt/d/multi_pipeline_tryout_imaging/nuisance_and_outcome_variables.txt",delim = "\t")
 
 #select nusaince for rs
 nuisance_variables_rs <- nuisance_and_outcome_variables %>%
@@ -58,7 +58,7 @@ gm_for_analysis$outcome <- outcome$outcome
 print("finished variance thresholding")
 
 print("relieff selection")
-gm_for_analysis_after_relieff <- select_features_relieff_derivatives_threshold(gm_for_analysis, "outcome")
+gm_for_analysis_after_relieff <- select_features_relieff_derivatives_threshold_fselector(gm_for_analysis, "outcome")
 print("finished relieff selection")
 
 
