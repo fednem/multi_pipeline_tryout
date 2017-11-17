@@ -17,10 +17,12 @@ outcome <- nuisance_and_outcome_variables %>%
 
 gm_var_thr <- sd_thresholding_for_categorical_outcome_variables_vec(gm_matrix, .25)
 
+
 gm_var_thr$outcome <- as.factor(outcome$outcome)
 
 start_time <- Sys.time()
 gm_relieff <- select_features_relieff_derivatives_threshold_CORElearn(gm_var_thr, "outcome", estimator = "ReliefFequalK")
+
 end_time <- Sys.time()
 end_time - start_time
 
