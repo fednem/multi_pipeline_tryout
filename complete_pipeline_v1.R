@@ -3,19 +3,16 @@ source("correct_for_nuisance_variables.s")
 library(tidyverse)
 library(foreach)
 library(doParallel) 
-library(RWeka)
 library(magrittr)
-library(Biocomb)
-library(FNN)
 source("sd_thresholding_for_continuous_outcome_variables.s")
-source("select_features_relieff_derivatives_threshold.s")
+source("select_features_relieff_derivatives_threshold_CORElearn.s")
 source("scale_data_frame.s")
 
 #preparing all images modalities for following steps: i.e. reshape all images modalities to n by v matrix
 print("preparing matrix")
 gm_matrix <- reshape_images_for_pipeline("D:/multi_pipeline_tryout_imaging/gm/", "gm_mask.nii.gz", "s8")
-wm_matrix <- reshape_images_for_pipeline("D:/multi_pipeline_tryout_imaging/wm/", "wm_mask.nii.gz", "s8")
-rs_matrix <- reshape_images_for_pipeline("D:/multi_pipeline_tryout_imaging/rs_dmn_mpfc/", "rs_mask.nii.gz", "resampled")
+# wm_matrix <- reshape_images_for_pipeline("D:/multi_pipeline_tryout_imaging/wm/", "wm_mask.nii.gz", "s8")
+# rs_matrix <- reshape_images_for_pipeline("D:/multi_pipeline_tryout_imaging/rs_dmn_mpfc/", "rs_mask.nii.gz", "resampled")
 print("finished preparing matrix")
 #factor out nuisance variable
 #read nuisance variables file
@@ -38,7 +35,7 @@ outcome <- nuisance_and_outcome_variables %>%
   mutate(outcome = if_else(group_1 == 1, "HC", "NF1")) %>%
   select(outcome)
 
-SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMO")
+
 
 #GM features selection steps
 print("variance thresholding")
@@ -73,3 +70,5 @@ rs_thr_var_outcome <- sd_thresholding_for_continuous_outcome_variables(rs_matrix
 # gm_matrix_res <- residuals_on_a_dataframe(gm_matrix, nuisance_variables_struct)
 # wm_matrix_res <- residuals_on_a_dataframe(wm_matrix, nuisance_variables_struct)
 # rs_matrix_res <- residuals_on_a_dataframe(rs_matrix, nuisance_variables_rs)
+
+SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMO")

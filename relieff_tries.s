@@ -1,44 +1,26 @@
 source("reshape_images_for_pipeline.s")
-source("correct_for_nuisance_variables.s")
+source("sd_thresholding_for_categorical_outcome_variables_vec.s")
 library(tidyverse)
-library(foreach)
-library(doParallel) 
-library(RWeka)
-library(magrittr)
-library(Biocomb)
-library(FNN)
-source("sd_thresholding_for_continuous_outcome_variables.s")
-source("calculate_features_threshold_based_on_second_derivative_fselector.s")
-source("scale_data_frame.s")
+library(CORElearn)
 
 #preparing all images modalities for following steps: i.e. reshape all images modalities to n by v matrix
 print("preparing matrix")
-gm_matrix <- reshape_images_for_pipeline("/mnt/d/multi_pipeline_tryout_imaging/gm/", "gm_mask.nii.gz", "s8")
-gm_matrix_selected <- gm_matrix[,sample(ncol(gm_matrix), floor(ncol(gm_matrix)*.5))]
+gm_matrix <- reshape_images_for_pipeline("E:/multi_pipeline_tryout-improvement_on_relieff/gm", "gm_mask.nii.gz", "s8")
 
-nuisance_and_outcome_variables <- read_delim("/mnt/d/multi_pipeline_tryout_imaging/nuisance_and_outcome_variables.txt",delim = "\t")
+nuisance_and_outcome_variables <- read_delim("E:/multi_pipeline_tryout-improvement_on_relieff/gm/nuisance_and_outcome_variables.txt",delim = "\t")
 
-#extract outcome variable 
-outcome <- nuisance_and_outcome_variables %>% 
+#extract outcome variable
+outcome <- nuisance_and_outcome_variables %>%
   mutate(outcome = if_else(group_1 == 1, "HC", "NF1")) %>%
   select(outcome)
 
-gm_matrix_selected$outcome <- as.factor(outcome$outcome)
+gm_varèthr <- sd_th
 
-ReliefF_eval <- make_Weka_attribute_evaluator("weka/attributeSelection/ReliefFAttributeEval")
-
-start_time <- Sys.time()
-aa <- ReliefF_eval(outcome ~ ., gm_matrix_selected, control = Weka_control(M = 10, K = 5))
-end_time <- Sys.time()
-end_time - start_time
 
 start_time <- Sys.time()
-aa <- attrEval(formula = 69904, gm_matrix, estimator = "ReliefFequalK")
+aa <- attrEval(formula = ncol(gm_matrix), gm_matrix, estimator = "ReliefFequalK")
 end_time <- Sys.time()
 end_time - start_time
 
 
-# start_time_complete <- Sys.time()
-# aa <- ReliefF_eval(outcome ~ ., gm_matrix, control = Weka_control(M = 10, K = 5))
-# end_time_complete <- Sys.time()
-# end_time_complete - start_time_complete
+
