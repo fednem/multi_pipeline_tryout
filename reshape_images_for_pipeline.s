@@ -27,6 +27,7 @@ reshape_images_for_pipeline <- function (image_dir, mask, pattern_for_search) {
   colnames(n_by_v_matrix) <- paste("X", mask_sparse, sep = "")
   setwd(this_wd)
   n_by_v_matrix <- as_data_frame(n_by_v_matrix)
+  list(n_by_v_matrix = n_by_v_matrix, dim_img = dim(mask_struct@.Data), img_struct = mask_struct)
   #print("returning")
   #return(n_by_v_matrix)
   
