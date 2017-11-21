@@ -21,7 +21,6 @@ gm_var_thr <- sd_thresholding_for_categorical_outcome_variables_vec(gm_matrix, .
 
 gm_var_thr$outcome <- as.factor(outcome$outcome)
 
-
 gm_relieff <- select_features_relieff_derivatives_threshold_CORElearn(gm_var_thr, "outcome", estimator = "ReliefFequalK")
 
 coordinates_from_features_colnames <- gm_relieff[,-1] %>%
@@ -56,4 +55,5 @@ for (cl in 1:nrow(coordinates_from_features_colnames)) {
 }
 end_vec <- Sys.time()
 
-end_vec - start_vec
+
+
