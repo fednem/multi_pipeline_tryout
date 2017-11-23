@@ -16,11 +16,12 @@ middle_pts <- function(x){
 }
 
 calculate_features_threshold_based_on_second_derivative <- function(x,y, to_plot = TRUE) {
-  smoothed_y <- predict(smooth.spline(y))$y
-  #smoothed_y <- predict(loess(y ~ x))
+  smoothed_y <- loess(y ~ x,
+                      data.frame(y = y, x = x, model = T), span = .1) %>% predict(.)
+  
   second_d <- deriv(middle_pts(x), deriv(x, smoothed_y))
   smooth_second_d <- loess(second_d ~ midpts,
-                           data.frame(second_d = second_d, midpts = middle_pts(middle_pts(x))), model = T)
+                           data.frame(second_d = second_d, midpts = middle_pts(middle_pts(x))), model = T, span = .1)
   otp <- predict(smooth_second_d)
   thr <- y[findValleys(otp)[1]]
   

@@ -6,9 +6,9 @@ library(CORElearn)
 
 #preparing all images modalities for following steps: i.e. reshape all images modalities to n by v matrix
 print("preparing matrix")
-gm_matrix <- reshape_images_for_pipeline("E:/multi_pipeline_tryout-improvement_on_relieff/gm", "gm_mask.nii.gz", "s8")
-gm_matrix <- gm_matrix$n_by_v_matrix
-gm_img_dim <- gm_matrix$dim_img
+gm_info <- reshape_images_for_pipeline("E:/multi_pipeline_tryout-improvement_on_relieff/gm", "gm_mask.nii.gz", "s8")
+gm_matrix <- gm_info$n_by_v_matrix
+gm_img_dim <- gm_info$dim_img
 nuisance_and_outcome_variables <- read_delim("E:/multi_pipeline_tryout-improvement_on_relieff/gm/nuisance_and_outcome_variables.txt",delim = "\t")
 
 #extract outcome variable
