@@ -42,7 +42,7 @@ out <- foreach(fold_index = 1:max(Fold), .inorder = FALSE,
   
   df_for_analysis$outcome <- outcome_variables$`Death rate, crude (per 1,000 people)`[Fold != fold_index]
   
-  #IMPORTANT STEP 2: use relieff method and use derivatives methid from Meng et al 2017 to find threshold
+  #IMPORTANT STEP 2: use relieff method and use derivatives method from Meng et al 2017 to find threshold
   
   df_for_analysis_after_relieff <- select_features_relieff_derivatives_threshold(df_for_analysis, "outcome")
   

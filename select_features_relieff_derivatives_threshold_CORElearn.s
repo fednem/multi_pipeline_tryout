@@ -1,9 +1,9 @@
 library(tidyverse)
-library(RWeka)
+library(CORElearn)
 library(numDeriv)
 library(quantmod)
 
-ReliefF_eval <- make_Weka_attribute_evaluator("weka/attributeSelection/ReliefFAttributeEval")
+
 
 deriv <- function(x,y) {
   output <- diff(y)/diff(x)
@@ -16,11 +16,12 @@ middle_pts <- function(x){
 }
 
 calculate_features_threshold_based_on_second_derivative <- function(x,y, to_plot = TRUE) {
-  smoothed_y <- predict(smooth.spline(y))$y
-  #smoothed_y <- predict(loess(y ~ x))
+  smoothed_y <- loess(y ~ x,
+                      data.frame(y = y, x = x, model = T), span = .1) %>% predict(.)
+  
   second_d <- deriv(middle_pts(x), deriv(x, smoothed_y))
   smooth_second_d <- loess(second_d ~ midpts,
-                           data.frame(second_d = second_d, midpts = middle_pts(middle_pts(x))), model = T)
+                           data.frame(second_d = second_d, midpts = middle_pts(middle_pts(x))), model = T, span = .1)
   otp <- predict(smooth_second_d)
   thr <- y[findValleys(otp)[1]]
   
@@ -32,13 +33,13 @@ calculate_features_threshold_based_on_second_derivative <- function(x,y, to_plot
 }
 
 
-select_features_relieff_derivatives_threshold <- function(df, outcome) {
+select_features_relieff_derivatives_threshold_CORElearn <- function(df, outcome, estimator) {
   
-  formula <- as.formula(paste(outcome,"~.", sep = ""))
+  
   
   print("Performing relieff algorithm")
   
-  rf_weights <- ReliefF_eval(formula, df)
+  rf_weights <- attrEval(formula = ncol(df), df, estimator = estimator)
   
   print("Done relieff algorithm - calculating threshold")
   
