@@ -2,6 +2,7 @@ source("reshape_images_for_pipeline.s")
 source("sd_thresholding_for_categorical_outcome_variables_vec.s")
 source("select_features_relieff_derivatives_threshold_CORElearn.s")
 source("extract_weights_from_SMO.s")
+source("correct_for_nuisance_variables.s")
 library(tidyverse)
 library(CORElearn)
 library(spatstat)
@@ -41,6 +42,9 @@ outcome <- nuisance_and_outcome_variables %>%
   select(outcome)
 
 
+  
+
+
 #extract data for test set
 gm_info_test <- reshape_images_for_pipeline("E:/multi_pipeline_tryout-improvement_on_relieff/gm_aix", "gm_mask.nii.gz", "s8")
 gm_matrix_test <- gm_info_test$n_by_v_matrix
@@ -54,6 +58,13 @@ rs_info_test <- reshape_images_for_pipeline("E:/multi_pipeline_tryout-improvemen
                                        "gm_mask.nii.gz", "resampled")
 rs_matrix_test <- rs_info_test$n_by_v_matrix
 rm(rs_info_test)
+
+nuisance <- data_frame(group_1a =  c(nuisance_and_outcome_variables$centre_1a, rep(0,nrow(gm_matrix_test))), 
+                       group_1b = c(nuisance_and_outcome_variables$centre_1b, rep(0,nrow(gm_matrix_test))),
+                       group_2 = c(rep(0,nrow(gm_matrix)), rep(1,nrow(gm_matrix_test)))) %>%
+  mutate(centre = if_else(group_1a == 1, "pre_upgr", if_else(group_1b == 1, "post_upgr", "aix"))) %>%
+  select(centre)
+
 
 
 #initalize fold and set things up for parallel computing
@@ -260,14 +271,22 @@ colnames(rs_test_selected) <- paste("rs", colnames(rs_test_selected),sep ="_")
                              
 merged_modalities_df_test <- bind_cols(gm_test_selected, wm_test_selected, rs_test_selected) %>%
   select(., head(colnames(merged_modalities_df_selected),-1))
-                             
-                             
-                             
-model_SMO <- SMO_classifier(outcome ~ ., data = merged_modalities_df_selected)
+
+merged_modalities_all <- bind_rows(merged_modalities_df_selected, merged_modalities_df_test)
+                     
+merged_modalities_all_corrected <- residuals_on_a_dataframe(select(merged_modalities_all,-outcome), nuisance)
+
+merged_modalities_all_corrected_train <- merged_modalities_all_corrected[1:42,] %>% 
+  mutate(outcome = outcome_train)
+  
+model_SMO <- SMO_classifier(outcome ~ ., data = merged_modalities_all_corrected_train)
                              
 SMO_weights <- extract_weights_from_SMO(model_SMO)
+
+merged_modalities_all_corrected_test <- merged_modalities_all_corrected[43:nrow(merged_modalities_all_corrected),]
+  
                              
-classification <- predict(model_SMO, merged_modalities_df_test)
+classification <- predict(model_SMO, merged_modalities_all_corrected_test)
                              
 clusters_list <- list(gm = gm_coordinates_from_features_colnames, wm = wm_coordinates_from_features_colnames,
                       rs = rs_coordinates_from_features_colnames)
