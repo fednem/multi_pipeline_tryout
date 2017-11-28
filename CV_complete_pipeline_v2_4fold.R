@@ -1,3 +1,4 @@
+start_time <- Sys.time()
 source("reshape_images_for_pipeline.s")
 source("sd_thresholding_for_categorical_outcome_variables_vec.s")
 source("select_features_relieff_derivatives_threshold_CORElearn.s")
@@ -40,7 +41,7 @@ outcome <- nuisance_and_outcome_variables %>%
   select(outcome)
 
 #initalize fold and set things up for parallel computing
-fold <- caret::createFolds(outcome$outcome, k = 10, list = FALSE)
+fold <- caret::createFolds(outcome$outcome, k = 4, list = FALSE)
 #cl <- makeCluster(5, type='PSOCK')
 #registerDoParallel(cl)
 
@@ -266,6 +267,10 @@ out <- foreach(fold_index = 1:max(fold), .inorder = FALSE,
   out <- list(clusters = clusters_list, accuracy = accuracy, weights = SMO_weights)
   
                            }
+
+end_time <- Sys.time()
+
+end_time - start_time
   
   
 

@@ -6,6 +6,7 @@ library(CORElearn)
 library(spatstat)
 library(Biocomb)
 #preparing all images modalities for following steps: i.e. reshape all images modalities to n by v matrix
+
 print("preparing matrix")
 gm_info <- reshape_images_for_pipeline("E:/multi_pipeline_tryout-improvement_on_relieff/gm", "gm_mask.nii.gz", "s8")
 gm_matrix <- gm_info$n_by_v_matrix
@@ -188,6 +189,10 @@ merged_modalities_df$outcome <- as.factor(outcome$outcome)
 
 merged_modalities_df_selected <- merged_modalities_df %>%
   select(., select.cfs(merged_modalities_df)$Index, outcome)
+
+rm(merged_modalities_df)
+
+
 
 SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMO")
 
