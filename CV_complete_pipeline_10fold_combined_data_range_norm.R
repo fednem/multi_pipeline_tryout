@@ -3,6 +3,7 @@ source("reshape_images_for_pipeline.s")
 source("sd_thresholding_for_categorical_outcome_variables_vec.s")
 source("select_features_relieff_derivatives_threshold_CORElearn.s")
 source("extract_weights_from_SMO.s")
+source(")
 library(tidyverse)
 library(CORElearn)
 library(spatstat)
@@ -42,7 +43,9 @@ outcome <- nuisance_and_outcome_variables %>%
 
 outcome <- data_frame(outcome = c(outcome$outcome, c(rep("HC",21),rep("NF1",17))))
 
-
+gm_norm <- normalize_matrix_range(gm_matrix)
+wm_norm <- normalize_matrix_range(wm_matrix)
+rs_norm <- normalize_matrix_range(rs_matrix)
 
 #initalize fold and set things up for parallel computing
 fold <- caret::createFolds(outcome$outcome, k = 10, list = FALSE)
