@@ -52,7 +52,7 @@ rs_matrix <- normalize_matrix_range(rs_matrix)
 
 load("fold.RData")
 
-out <- foreach(fold_index = 3:4, .inorder = FALSE, 
+out <- foreach(fold_index = 5:6, .inorder = FALSE, 
                .packages = c("tidyverse","dplyr", "CORElearn", "spatstat", "numDeriv", "quantmod", "Biocomb", "RWeka"),
                .export = c("sd_thresholding_for_categorical_outcome_variables_vec", "select_features_relieff_derivatives_threshold_CORElearn",
                            "extract_weights_from_SMO", "SMO_classifier")) %do% {
