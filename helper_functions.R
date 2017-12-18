@@ -329,4 +329,50 @@ select_features_relieff_derivatives_threshold_CORElearn <- function(df, outcome,
   
 }
 
+extract_and_normalize_matrix <- function(...) {
+  
+  arguments <- list(...)
+  
+  for (arg in 1:length(arguments)) {
+    
+    info <- reshape_images_for_pipeline(arguments[[arg]][1], arguments[[arg]][2], arguments[[arg]][3])
+    matrix <- info$n_by_v_matrix
+    matrix <- normalize_matrix_range(matrix)
+    img_dim <- info$dim_img
+    out <- list(matrix = matrix, img_dim = img_dim)
+    assign(names(arguments)[arg], out)
+  }
+  
+  return(mget(names(arguments)))
+}
+
+
+create_n_balanced_folds <- function(original_fold, outcome, n_folds, maxIter = 10000) {
+  
+  opt_list <- list()
+  fisher_ps <- vector()
+  iteration_counter <- 0
+  index = 0
+  test_folds <- n_folds
+  while (test_folds != 0) {
+    this_fold <- sample(fold)
+    fisher_p <- fisher.test(table(this_fold, outcome))$p.value
+    eq_test <- sum(unlist(map2(list(this_fold), opt_list, identical)))
+    if (fisher_p > .2 && eq_test == 0) {
+      index = index + 1
+      opt_list[[index]] <- this_fold
+      test_folds <- test_folds - 1
+      fisher_ps[index] <- fisher_p
+    }
+    iteration_counter <- iteration_counter + 1
+    
+    if (iteration_counter == maxIter) {
+      warning("maxIter reached")
+      break
+    }
+  }
+  
+  return(list(folds = opt_list, fihser = fisher_ps))
+  
+}
 
