@@ -1,8 +1,10 @@
-fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate) {
+fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL) {
+  
+  if (length(fold_range) == 0) {up_to_fold <- 1:max(fold_to_evaluate)} else {up_to_fold <- fold_range}
   
   SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMO")
   
-  out <- foreach(fold_index = 1:max(fold_to_evaluate), .inorder = FALSE, 
+  out <- foreach(fold_index = up_to_fold, .inorder = FALSE, 
                  .packages = c("tidyverse","dplyr", "CORElearn", "spatstat", "numDeriv", "quantmod", "Biocomb", "RWeka"),
                  .export = c("sd_thresholding_for_categorical_outcome_variables_vec", "select_features_relieff_derivatives_threshold_CORElearn",
                              "extract_weights_from_SMO", "SMO_classifier", "list_of_modalities", "outcome", "fold_to_evaluate")) %do% {
