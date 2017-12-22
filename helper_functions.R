@@ -390,6 +390,10 @@ cluster_voxels <- function(coordinates_table, minimum_extent = 10, distances = c
     
     index = index + 1
     print(index)
+    if (!is.numeric(range(coordinates_table[,1])) || length(range(coordinates_table[,1])) < 2 || diff(range(coordinates_table[,1])) == 0 ||
+        !is.numeric(range(coordinates_table[,2])) || length(range(coordinates_table[,2])) < 2 || diff(range(coordinates_table[,2])) == 0 ||
+        !is.numeric(range(coordinates_table[,3])) || length(range(coordinates_table[,3])) < 2 || diff(range(coordinates_table[,3])) == 0) {break}
+    
     bb <- box3(range(coordinates_table[,1]),
                range(coordinates_table[,2]), range(coordinates_table[,3]))
     object.pp3 <- pp3(coordinates_table$V1,
