@@ -426,3 +426,33 @@ cluster_voxels <- function(coordinates_table, minimum_extent = 10, distances = c
 }
 
 
+create_n_balanced_folds <- function(original_fold, outcome, n_folds, maxIter = 10000) {
+  
+  opt_list <- list()
+  fisher_ps <- vector()
+  iteration_counter <- 0
+  index = 0
+  test_folds <- n_folds
+  while (test_folds != 0) {
+    this_fold <- sample(fold)
+    fisher_p <- fisher.test(table(this_fold, outcome))$p.value
+    eq_test <- sum(unlist(map2(list(this_fold), opt_list, identical)))
+    if (fisher_p > .2 && eq_test == 0) {
+      index = index + 1
+      opt_list[[index]] <- this_fold
+      test_folds <- test_folds - 1
+      fisher_ps[index] <- fisher_p
+    }
+    iteration_counter <- iteration_counter + 1
+    
+    if (iteration_counter == maxIter) {
+      warning("maxIter reached")
+      break
+    }
+  }
+  
+  return(list(folds = opt_list, fisher = fisher_ps))
+  
+}
+
+
