@@ -329,4 +329,130 @@ select_features_relieff_derivatives_threshold_CORElearn <- function(df, outcome,
   
 }
 
+extract_and_normalize_matrix <- function(...) {
+  
+  arguments <- list(...)
+  
+  for (arg in 1:length(arguments)) {
+    
+    info <- reshape_images_for_pipeline(arguments[[arg]][1], arguments[[arg]][2], arguments[[arg]][3])
+    matrix <- info$n_by_v_matrix
+    matrix <- normalize_matrix_range(matrix)
+    img_dim <- info$dim_img
+    out <- list(matrix = matrix, img_dim = img_dim)
+    assign(names(arguments)[arg], out)
+  }
+  
+  return(mget(names(arguments)))
+}
+
+
+create_n_balanced_folds <- function(original_fold, outcome, n_folds, maxIter = 10000) {
+  
+  opt_list <- list()
+  fisher_ps <- vector()
+  iteration_counter <- 0
+  index = 0
+  test_folds <- n_folds
+  while (test_folds != 0) {
+    this_fold <- sample(fold)
+    fisher_p <- fisher.test(table(this_fold, outcome))$p.value
+    eq_test <- sum(unlist(map2(list(this_fold), opt_list, identical)))
+    if (fisher_p > .2 && eq_test == 0) {
+      index = index + 1
+      opt_list[[index]] <- this_fold
+      test_folds <- test_folds - 1
+      fisher_ps[index] <- fisher_p
+    }
+    iteration_counter <- iteration_counter + 1
+    
+    if (iteration_counter == maxIter) {
+      warning("maxIter reached")
+      break
+    }
+  }
+  
+  return(list(folds = opt_list, fihser = fisher_ps))
+  
+}
+
+
+cluster_voxels <- function(coordinates_table, minimum_extent = 10, distances = c(1.8,3,4), n_passes = 3){
+  
+  if (length(distances) != n_passes) {
+    warning("you have not specified the correct number of distances")
+  }
+  
+  condition = TRUE
+  index = 0
+  
+  while (condition == TRUE && index < n_passes) {
+    
+    index = index + 1
+    print(index)
+    if (!is.numeric(range(coordinates_table[,1])) || length(range(coordinates_table[,1])) < 2 || diff(range(coordinates_table[,1])) == 0 ||
+        !is.numeric(range(coordinates_table[,2])) || length(range(coordinates_table[,2])) < 2 || diff(range(coordinates_table[,2])) == 0 ||
+        !is.numeric(range(coordinates_table[,3])) || length(range(coordinates_table[,3])) < 2 || diff(range(coordinates_table[,3])) == 0) {break}
+    
+    bb <- box3(range(coordinates_table[,1]),
+               range(coordinates_table[,2]), range(coordinates_table[,3]))
+    object.pp3 <- pp3(coordinates_table$V1,
+                      coordinates_table$V2, coordinates_table$V3, bb)
+    object.pp3_labelled <- connected(object.pp3, R = distances[index])
+    coordinates_table$cluster_id <- marks(object.pp3_labelled)
+    cluster_extent <- table(coordinates_table$cluster_id)
+    cluster_extent <- data_frame(extent = as.vector(cluster_extent), cluster_id = names(cluster_extent))
+    cluster_extent <- left_join(coordinates_table, cluster_extent, by = "cluster_id")
+    pass_name <- paste("cluster_to_retain_at_pass_", index, sep ="")
+    assign(pass_name, cluster_extent %>% filter(extent >= minimum_extent))
+    if (sum(table(coordinates_table$cluster_id) < minimum_extent) == 0) {condition = FALSE}
+    coordinates_table <- cluster_extent %>% 
+      filter(extent < minimum_extent) %>% 
+      select(V1, V2, V3, index)
+  }
+  
+  all_passes <- mget(ls(patt = "cluster_to_retain"))
+  
+  if(length(all_passes) == 1) {return(all_passes[[1]])}
+  
+  all_passes <- map2(all_passes,seq(1,length(all_passes)), ~ mutate(.x,set = .y)) %>%
+    Reduce(bind_rows, .) %>%
+    mutate(tt = paste(cluster_id, set, sep = "_")) %>% 
+    arrange(tt) %>% 
+    mutate(old_ind = as.numeric(as.factor(tt))) %>%
+    select(-extent, -set,-tt,-cluster_id, cluster_id = old_ind)
+  
+  return(all_passes)
+}
+
+
+create_n_balanced_folds <- function(original_fold, outcome, n_folds, maxIter = 10000) {
+  
+  opt_list <- list()
+  fisher_ps <- vector()
+  iteration_counter <- 0
+  index = 0
+  test_folds <- n_folds
+  while (test_folds != 0) {
+    this_fold <- sample(fold)
+    fisher_p <- fisher.test(table(this_fold, outcome))$p.value
+    eq_test <- sum(unlist(map2(list(this_fold), opt_list, identical)))
+    if (fisher_p > .2 && eq_test == 0) {
+      index = index + 1
+      opt_list[[index]] <- this_fold
+      test_folds <- test_folds - 1
+      fisher_ps[index] <- fisher_p
+    }
+    iteration_counter <- iteration_counter + 1
+    
+    if (iteration_counter == maxIter) {
+      warning("maxIter reached")
+      break
+    }
+  }
+  
+  return(list(folds = opt_list, fisher = fisher_ps))
+  
+}
+
 

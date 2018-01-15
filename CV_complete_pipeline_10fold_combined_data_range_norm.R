@@ -3,14 +3,14 @@ source("reshape_images_for_pipeline.s")
 source("sd_thresholding_for_categorical_outcome_variables_vec.s")
 source("select_features_relieff_derivatives_threshold_CORElearn.s")
 source("extract_weights_from_SMO.s")
-source(")
+source("normalize_matrix_range.s")
 library(tidyverse)
 library(CORElearn)
 library(spatstat)
 library(Biocomb)
 library(doParallel) 
 library(RWeka)
-
+start_time <- Sys.time()
 SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMO")
 
 #preparing all images modalities for following steps: i.e. reshape all images modalities to n by v matrix
@@ -43,9 +43,15 @@ outcome <- nuisance_and_outcome_variables %>%
 
 outcome <- data_frame(outcome = c(outcome$outcome, c(rep("HC",21),rep("NF1",17))))
 
-gm_norm <- normalize_matrix_range(gm_matrix)
-wm_norm <- normalize_matrix_range(wm_matrix)
-rs_norm <- normalize_matrix_range(rs_matrix)
+nuisance_variables <- nuisance_and_outcome_variables %>%
+  mutate(centre = if_else(centre_1a == 1, "pre_upgrade", "post_upgrade")) %>%
+  select(centre)
+
+nuisance_variables <- data_frame(centre = c(nuisance_variables$centre, rep("aix",38)))
+
+gm_matrix <- normalize_matrix_range(gm_matrix)
+wm_matrix <- normalize_matrix_range(wm_matrix)
+rs_matrix <- normalize_matrix_range(rs_matrix)
 
 #initalize fold and set things up for parallel computing
 fold <- caret::createFolds(outcome$outcome, k = 10, list = FALSE)
@@ -66,6 +72,9 @@ out <- foreach(fold_index = 1:max(fold), .inorder = FALSE,
   gm_test <- gm_matrix[fold == fold_index,]
   wm_test <- wm_matrix[fold == fold_index,]
   rs_test <- rs_matrix[fold == fold_index,]
+  
+  centre_train <- nuisance_variables$centre[fold != fold_index]
+  centre_test <- nuisance_variables$centre[fold == fold_index]
   
   outcome_train <- as.factor(outcome$outcome [fold != fold_index])
   outcome_test <- as.factor(outcome$outcome [fold == fold_index])
@@ -271,10 +280,32 @@ out <- foreach(fold_index = 1:max(fold), .inorder = FALSE,
   clusters_list <- list(gm = gm_coordinates_from_features_colnames, wm = wm_coordinates_from_features_colnames,
                         rs = rs_coordinates_from_features_colnames)
   accuracy <- data_frame(classification = classification, ground = outcome_test)
-  out <- list(clusters = clusters_list, accuracy = accuracy, weights = SMO_weights)
+  centres <- list(centre_test = centre_test, centre_training = centre_train)
+  out <- list(clusters = clusters_list, accuracy = accuracy, weights = SMO_weights, centres = centres)
   
                            }
   
   
 
+end_time <- Sys.time()
 
+end_time - start_time
+
+
+out_class <- out %>%
+  map(~`$`(.,"accuracy")) %>%
+  Reduce(bind_rows,.)
+
+out_class <- out_class %>%
+  mutate(status = if_else(classification == ground, "correct", "incorrect"))
+
+out_centre <- out %>%
+  map(~`$`(.,"centres")) %>%
+  map(~`$`(.,"centre_test")) %>%
+  Reduce(c,.)
+
+out_class$centre <- out_centre
+
+table(out_class$status, out_class$centre)
+
+chisq.test(table(out_class$status, out_class$centre))
