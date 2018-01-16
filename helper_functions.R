@@ -268,7 +268,7 @@ sd_thresholding_vec <- function(df, outcome) {
   sd_threshold_for_each_feature <- 0.5 * (sd_outcome/mean_outcome) * mean(as.matrix(df))
   
   
-  #sd_each_features <- sqrt(var_vectorized(df))
+  sd_each_features <- sqrt(var_vectorized(df))
   
   features_above_treshold <- which(sd_each_features > sd_threshold_for_each_feature)
   
@@ -415,7 +415,7 @@ cluster_voxels <- function(coordinates_table, minimum_extent = 10, distances = c
   
   if(length(all_passes) == 1) {return(all_passes[[1]])}
   
-  all_passes <- map2(all_passes,seq(1,length(all_passes)), ~ mutate(.x,set = .y)) %>%
+  all_passes <- map2(all_passes,seq(1,n_passes), ~ mutate(.x,set = .y)) %>%
     Reduce(bind_rows, .) %>%
     mutate(tt = paste(cluster_id, set, sep = "_")) %>% 
     arrange(tt) %>% 
