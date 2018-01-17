@@ -260,18 +260,26 @@ sd_thresholding_for_categorical_outcome_variables_vec <- function(df, quant) {
 
 #sd thresholding
 sd_thresholding_vec <- function(df, outcome) {
-  
+
+  pass <- 0
+  check <- 0
+  k <- .525 
   mean_outcome <- mean(outcome)
   sd_outcome <- sd(outcome)
-  
-  
-  sd_threshold_for_each_feature <- 0.5 * (sd_outcome/mean_outcome) * mean(as.matrix(df))
-  
-  
   sd_each_features <- sqrt(var_vectorized(df))
+  mean_matrix <- mean(as.matrix(df))
+  sd_mean_ration <- sd_outcome/mean_outcome
   
+  while (check < 500) {
+  pass <- pass + 1
+  k <- k - .025
+  print(paste("pass is", pass, sep = " "))
+  print(paste("k is", k, sep = " "))
+    
+  sd_threshold_for_each_feature <- k * sd_mean_ration * mean_matrix
   features_above_treshold <- which(sd_each_features > sd_threshold_for_each_feature)
-  
+  check <- length(features_above_treshold)
+  print(paste("check is", check, sep = " "))}
   output_df <- df %>%
     select(., features_above_treshold)
   
