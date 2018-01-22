@@ -1,4 +1,4 @@
-fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL) {
+fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL) {
   
   if (length(fold_range) == 0) {up_to_fold <- 1:max(fold_to_evaluate)} else {up_to_fold <- fold_range}
   
@@ -123,7 +123,7 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                
                                
                                
-                               model_SMO <- SMO_classifier(as.factor(outcome) ~ ., data = merged_modalities_df_selected)
+                               model_SMO <- SMO_classifier(outcome ~ ., data = merged_modalities_df_selected)
                                
                                SMO_weights <- extract_weights_from_SMOreg(model_SMO)
                                
