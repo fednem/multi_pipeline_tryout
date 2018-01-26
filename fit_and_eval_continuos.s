@@ -53,6 +53,17 @@ fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate
                                
                                 print(paste("clustering, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
                                 coordinates_from_features_colnames <- cluster_voxels(coordinates_from_features_colnames)
+                                
+                                if(nrow(coordinates_from_features_colnames) == 0) {
+                                  print("WARNING: this modality has no usable features")
+                                  all_mods_train[[mod]] <- NA
+                                  names(all_mods_train)[mod] <- name_of_mod 
+                                  all_relieff_features[[mod]] <- NA
+                                  names(all_relieff_features)[mod] <- name_of_mod 
+                                  all_coordinates[[mod]] <- NA
+                                  names(all_coordinates)[mod] <- name_of_mod 
+                                  next
+                                }
                                
                                
                                 #averaging of clusters
@@ -80,6 +91,9 @@ fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate
                                 all_coordinates[[mod]] <- coordinates_from_features_colnames
                                 names(all_coordinates)[mod] <- name_of_mod }
                                
+                                if(sum(is.na(all_mods_train)) != 0) { 
+                                all_mods_train <- all_mods_train[-which(is.na(all_mods_train))]}
+                               
                                 merged_modalities_df <- Reduce(bind_cols, all_mods_train)
                                
                                 merged_modalities_df$outcome <- outcome_train
@@ -100,7 +114,12 @@ fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate
                                 name_of_mod <- names(list_of_modalities)[mod]
                                 outcome_test <- outcome[fold == fold_index]
                                 
-                               
+                                if (is.na(all_relieff_features[mod])){ 
+                                  print ("WARNING: this modality has no usable features")
+                                  all_mods_test[[mod]] <- NA
+                                  names(all_mods_test)[mod] <- name_of_mod
+                                  next}
+                                
                                test_selected <- test %>%
                                  select(., all_relieff_features[[mod]]) %>%
                                  mutate(subject = row_number()) %>%
@@ -117,6 +136,9 @@ fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate
                                all_mods_test[[mod]] <- test_selected
                                names(all_mods_test)[mod] <- name_of_mod}
                               
+                              
+                              if(sum(is.na(all_mods_test)) != 0) { 
+                                all_mods_test <- all_mods_test[-which(is.na(all_mods_test))]}
                               
                                merged_modalities_df_test <- Reduce(bind_cols, all_mods_test) %>%
                                  select(., head(colnames(merged_modalities_df_selected),-1))
