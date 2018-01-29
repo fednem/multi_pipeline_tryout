@@ -1,8 +1,8 @@
-fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL) {
+fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL, nuisance_variable) {
   
   if (length(fold_range) == 0) {up_to_fold <- 1:max(fold_to_evaluate)} else {up_to_fold <- fold_range}
   
-  SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMO")
+  SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMOreg")
   
   out <- foreach(fold_index = up_to_fold, .inorder = FALSE, 
                  .packages = c("tidyverse","dplyr", "CORElearn", "spatstat", "numDeriv", "quantmod", "Biocomb", "RWeka"),
@@ -25,14 +25,14 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                
                                 #variance thresholding
                                 print(paste("variance thresholding, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
-                                var_thr <- sd_thresholding_for_categorical_outcome_variables_vec(train, .25)
+                                var_thr <- sd_thresholding_vec(train, outcome_train)
                                
                                 var_thr$outcome <- outcome_train
                                
                                 #relieff
                                 print(paste("relieff, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
                                 relieff <- select_features_relieff_derivatives_threshold_CORElearn(var_thr, "outcome", 
-                                                                                                     estimator = "ReliefFequalK")
+                                                                                                     estimator = "RReliefFequalK")
                                 rm(var_thr)
                                
                                 #coordinates finding 
@@ -91,8 +91,8 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                 all_coordinates[[mod]] <- coordinates_from_features_colnames
                                 names(all_coordinates)[mod] <- name_of_mod }
                                
-                               if(sum(is.na(all_mods_train)) != 0) { 
-                                 all_mods_train <- all_mods_train[-which(is.na(all_mods_train))]}
+                                if(sum(is.na(all_mods_train)) != 0) { 
+                                all_mods_train <- all_mods_train[-which(is.na(all_mods_train))]}
                                
                                 merged_modalities_df <- Reduce(bind_cols, all_mods_train)
                                
@@ -120,7 +120,6 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                   names(all_mods_test)[mod] <- name_of_mod
                                   next}
                                 
-                               
                                test_selected <- test %>%
                                  select(., all_relieff_features[[mod]]) %>%
                                  mutate(subject = row_number()) %>%
@@ -137,20 +136,30 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                all_mods_test[[mod]] <- test_selected
                                names(all_mods_test)[mod] <- name_of_mod}
                               
+                              
                               if(sum(is.na(all_mods_test)) != 0) { 
                                 all_mods_test <- all_mods_test[-which(is.na(all_mods_test))]}
                               
-                              
                                merged_modalities_df_test <- Reduce(bind_cols, all_mods_test) %>%
                                  select(., head(colnames(merged_modalities_df_selected),-1))
+								 
+								nuisance_train <- nuisance_variable[fold != fold_index]
+								nuisance_test <- nuisance_variable[fold == fold_index]
+								
+								sets_variance_removed <- remove_variance(merged_modalities_df_selected, merged_modalities_df_test, nuisance_train, nuisance_test)
                                
+                               df_train_variance_removed <- sets_variance_removed$df_train
+							   df_test_variance_removed <- sets_variance_removed$df_test
+							   
+							   df_train_variance_removed$outcome <- outcome_train
                                
+                               model_SMO <- SMO_classifier(outcome ~ ., data = df_train_variance_removed)
                                
-                               model_SMO <- SMO_classifier(as.factor(outcome) ~ ., data = merged_modalities_df_selected)
+                               SMO_weights <- extract_weights_from_SMOreg(model_SMO)
                                
-                               SMO_weights <- extract_weights_from_SMO(model_SMO)
-                               
-                               classification <- predict(model_SMO, merged_modalities_df_test)
+                               classification <- predict(model_SMO, df_test_variance_removed)
+							   
+							   
                                
                                
                                accuracy <- data_frame(classification = classification, ground = outcome_test)

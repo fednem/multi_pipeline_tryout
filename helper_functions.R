@@ -9,24 +9,6 @@ library(numDeriv)
 library(quantmod)
 
 
-#correct for nuisance variables
-residuals_on_a_vector <- function(vec, iv_as_a_dataframe, formula = NULL) {
-  if (is.null(formula)) {formula <- as.formula("dependent ~ .")} else {formula <- as.formula(paste("dependent ~ ",formula))}
-  df <- iv_as_a_dataframe
-  df$dependent <- vec
-  model <- lm(formula = formula, data = df)
-  res <- residuals(model)
-  return(res)
-}
-
-residuals_on_a_dataframe <- function(df, iv_as_a_dataframe, formula = NULL) {
-  
-  out <- map(df,residuals_on_a_vector, iv_as_a_dataframe, formula)
-  return(as_data_frame(out))
-  
-}
-
-
 #extract weights from different models
 extract_weights_from_SMO <- function(model) {
   
@@ -464,3 +446,28 @@ create_n_balanced_folds <- function(original_fold, outcome, n_folds, maxIter = 1
 }
 
 
+#correct for nuisance variables
+residuals_on_a_vector <- function(vec, iv_as_a_dataframe, formula = NULL) {
+  if (is.null(formula)) {formula <- as.formula("dependent ~ .")} else {formula <- as.formula(paste("dependent ~ ",formula))}
+  df <- iv_as_a_dataframe
+  df$dependent <- vec
+  model <- lm(formula = formula, data = df)
+  res <- residuals(model)
+  return(res)
+}
+
+residuals_on_a_dataframe <- function(df, iv_as_a_dataframe, formula = NULL) {
+  
+  out <- map(df,residuals_on_a_vector, iv_as_a_dataframe, formula)
+  return(as_data_frame(out))
+  
+}
+
+
+remove_variance <- function(df_train, df_test, nuisance_train, nuisance_test) {
+  number_of_rows_to_keep <- nrow(df_test)
+  df_tot <- bind_rows(df_train, df_test)
+  nuisance_to_remove <- data_frame(nuisance = as.factor(c(nuisance_train,nuisance_test)))
+  df_tot_variance_removed <- residuals_on_a_dataframe(df_tot[-ncol(df_tot)], nuisance_to_remove)
+  return(list(df_train <- head(df_tot_variance_removed, (nrow(df_tot) - number_of_rows_to_keep))),
+         df_test <- tail(df_tot_variance_removed, number_of_rows_to_keep))}

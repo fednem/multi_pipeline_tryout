@@ -1,4 +1,4 @@
-fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL) {
+fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL, nuisance_variable) {
   
   if (length(fold_range) == 0) {up_to_fold <- 1:max(fold_to_evaluate)} else {up_to_fold <- fold_range}
   
@@ -144,11 +144,20 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                merged_modalities_df_test <- Reduce(bind_cols, all_mods_test) %>%
                                  select(., head(colnames(merged_modalities_df_selected),-1))
                                
+							   nuisance_train <- nuisance_variable[fold != fold_index]
+								nuisance_test <- nuisance_variable[fold == fold_index]
+								
+								sets_variance_removed <- remove_variance(merged_modalities_df_selected, merged_modalities_df_test, nuisance_train, nuisance_test)
+                               
+                               df_train_variance_removed <- sets_variance_removed$df_train
+							   df_test_variance_removed <- sets_variance_removed$df_test
+							   
+							   df_train_variance_removed$outcome <- outcome_train
                                
                                
-                               model_SMO <- SMO_classifier(as.factor(outcome) ~ ., data = merged_modalities_df_selected)
+                               model_SMO <- SMO_classifier(as.factor(outcome) ~ ., data = df_train_variance_removed)
                                
-                               SMO_weights <- extract_weights_from_SMO(model_SMO)
+                               SMO_weights <- extract_weights_from_SMO(df_test_variance_removed)
                                
                                classification <- predict(model_SMO, merged_modalities_df_test)
                                

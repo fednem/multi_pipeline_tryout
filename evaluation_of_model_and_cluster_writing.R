@@ -11,11 +11,12 @@ output_selected_clusters <- function(output_list, space_defining_image, output_n
   
   folds <- length(output_list)
   
-  modalities <- names(output_list[[fold_index]]$clusters)
+    
+  for (fold_index in 1:folds) {
+  
+  modalities <- names(output_list[[fold_index]][[1]])
   
   modalities_number <- length(modalities)
-  
-  for (fold_index in 1:folds) {
     
     for (modality_index in 1:modalities_number) { 
       
@@ -33,7 +34,7 @@ output_selected_clusters <- function(output_list, space_defining_image, output_n
         map_chr(~`[`(.,2)) %>%
         as.numeric(.)
       
-      selected_clusters <- `[[`(output_list[[fold_index]]$clusters, this_modality) %>%
+      selected_clusters <- `[[`(output_list[[fold_index]][[1]], this_modality) %>%
       filter(., cluster_id %in% this_modality_clusters)
     
       new_img <- img
