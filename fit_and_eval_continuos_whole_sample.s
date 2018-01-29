@@ -1,9 +1,12 @@
 library(spatstat)
+library(Biocomb)
 fit_and_eval <- function(list_of_modalities, outcome) {
   
   
-  SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMO")
-  
+  SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMOreg")
+  all_mods_train <- list()
+  all_relieff_features <- list()
+  all_coordinates <- list()
   for (mod in 1:length(list_of_modalities)) {
     
      train <- list_of_modalities[[mod]]$matrix
@@ -13,14 +16,14 @@ fit_and_eval <- function(list_of_modalities, outcome) {
     
      #variance thresholding
      print(paste("variance thresholding, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
-     var_thr <- sd_thresholding_for_categorical_outcome_variables_vec(train, .25)
-    
-     var_thr$outcome <- outcome_train
+      var_thr <- sd_thresholding_vec(train, outcome_train)
+                               
+      var_thr$outcome <- outcome_train
     
      #relieff
      print(paste("relieff, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
      relieff <- select_features_relieff_derivatives_threshold_CORElearn(var_thr, "outcome", 
-                    estimator = "ReliefFequalK")
+                    estimator = "RReliefFequalK")
      rm(var_thr)
     
      #coordinates finding 
@@ -75,14 +78,14 @@ fit_and_eval <- function(list_of_modalities, outcome) {
      merged_modalities_df_selected <- merged_modalities_df %>%
       select(., select.cfs(merged_modalities_df)$Index, outcome)
     
-    model_SMO <- SMO_classifier(as.factor(outcome) ~ ., data = merged_modalities_df_selected)
+    model_SMO <- SMO_classifier(outcome ~ ., data = merged_modalities_df_selected)
     
-    SMO_weights <- extract_weights_from_SMO(model_SMO)
+    SMO_weights <- extract_weights_from_SMOreg(model_SMO)
     
     classification <- predict(model_SMO)
     
     
-    accuracy <- data_frame(classification = classification, ground = outcome_test)
+    accuracy <- data_frame(classification = classification, ground = outcome)
     out <- list(all_coordinates, accuracy = accuracy, weights = SMO_weights, data_frame = merged_modalities_df_selected)
     
   }
