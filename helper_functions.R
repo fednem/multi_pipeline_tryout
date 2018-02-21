@@ -471,3 +471,47 @@ remove_variance <- function(df_train, df_test, nuisance_train, nuisance_test) {
   df_tot_variance_removed <- residuals_on_a_dataframe(df_tot[-ncol(df_tot)], nuisance_to_remove)
   return(list(df_train <- head(df_tot_variance_removed, (nrow(df_tot) - number_of_rows_to_keep))),
          df_test <- tail(df_tot_variance_removed, number_of_rows_to_keep))}
+
+calculate_correlation_with_outcome <- function (df, outcome) {
+  cors <- sort(abs(map_dbl(df, cor, outcome)), decreasing = TRUE)}
+
+calculate_fold_correlation <- function(vec, outcome, n_folds = 4) {
+  
+  cors <- vector("numeric", length = n_folds)
+  
+  folds <- caret::createFolds(seq(1,length(vec)), k = n_folds, list = FALSE)
+  
+  for (fold_index in 1:n_folds) {
+    cors [fold_index] <- cor(vec[folds != fold_index], outcome[folds != fold_index])
+  }
+  return(min(abs(cors)))
+}
+
+calculate_fold_correlation_df <- function(df, outcome, ...) {
+  return(sort(sapply(df, calculate_fold_correlation, outcome, ...), decreasing = TRUE))
+  
+}
+
+select_features_correlation <- function(df, outcome, fold = TRUE, ...) {
+  
+  print("Calculating correlations between features and outcome")
+  
+  if (fold) { 
+    print("you've chosen to calculate CV correlation")
+    ordered_correlation <- calculate_fold_correlation_df(df, outcome, ...)
+  } else {
+    print("you've chosen to calculate NOT CV correlation")  
+    ordered_correlation <- calculate_correlation_with_outcome(df, outcome)}
+  
+  print("Done correlations - calculating threshold")
+  
+  thr <- calculate_features_threshold_based_on_second_derivative(seq(1,length(ordered_correlation)), ordered_correlation)$threshold
+  
+  selected_weights <- names(ordered_correlation) [ordered_correlation >= thr]
+  
+  output <- df %>%
+    select(one_of(selected_weights)) %>%
+    mutate(outcome = outcome)
+  
+}
+
