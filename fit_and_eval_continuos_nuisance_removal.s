@@ -23,7 +23,7 @@ fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate
                                 img_dim <- list_of_modalities[[mod]]$img_dim
                                 name_of_mod <- names(list_of_modalities)[[mod]]
                                 if (length(subjects_id) == 0) {training_subjects = NULL
-                                test_subjects = NULL} else {training_subject = subjects_id[fold != fold_index]
+                                test_subjects = NULL} else {training_subjects = subjects_id[fold != fold_index]
                                 test_subjects = subjects_id == fold_index}
                                
                                 #variance thresholding
