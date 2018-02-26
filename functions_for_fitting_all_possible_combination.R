@@ -45,7 +45,15 @@ list_of_modalities_combinations <- function(list_of_modalities_for_training) {
 #also note that the solution that give the best accuracy in the LOO is then refitted to the whole sample
 #in order to have a unique set to use for testing
 
-select_best_combination_of_modalities <- function(vector_of_combinations, df_training, outcome) {
+select_best_combination_of_modalities <- function(vector_of_combinations, df_training, outcome, n_fold = 10, seed = NULL) {
+  if (length(seed) != 0) {seed = seed} else {seed = sample(5000,1)
+  print(paste("your seed is", seed, "you may want to write it down", sep = " "))}
+  
+  set.seed(seed)
+  
+  fold <- caret::createFolds(outcome, k = n_fold, list = FALSE)
+  
+  print(paste("you are running an", n_fold, "inner CV scheme", sep = " "))
   
   #initialize an empty vector to store the results of the computations
   #note that the vector is equal to length of the combinations vector + one in order to have the place
@@ -55,16 +63,16 @@ select_best_combination_of_modalities <- function(vector_of_combinations, df_tra
     print(vector_of_combinations[string_combinations])
     this_combination <- select(df_training, matches(vector_of_combinations[string_combinations])) %>%
       mutate(outcome = outcome)
-    out<- foreach (fold_index = 1:nrow(this_combination), 
+    out<- foreach (fold_index = 1:max(fold), 
                    .inorder = FALSE, 
                    .packages = c("tidyverse","dplyr", "Biocomb", "RWeka"),
                    .export = c( "SMO_classifier", "list_of_modalities", "outcome", "fold_to_evaluate"), .combine = "c") %do% {
                      
                      print(fold_index)
-                     this_combination_loo <- this_combination[-fold_index,] %>%
+                     this_combination_loo <- this_combination[fold != fold_index,] %>%
                        select(., c(select.cfs(.)$Index, ncol(.)))
                      this_model <- SMO_classifier(as.factor(outcome) ~ ., this_combination_loo)
-                     loo_prediction <- predict(this_model, this_combination[fold_index,])}
+                     loo_prediction <- predict(this_model, this_combination[fold == fold_index,])}
     df_for_accuracy <- data_frame(classification = out, ground = outcome)
     table_for_accuracy <- table(df_for_accuracy)
     balanced_accuracy <- ((table_for_accuracy[1,1]/sum(table_for_accuracy[1,])) + table_for_accuracy[2,1]/sum(table_for_accuracy[2,]))/2
@@ -75,7 +83,7 @@ select_best_combination_of_modalities <- function(vector_of_combinations, df_tra
   df_training <- df_training %>%
     mutate(outcome = outcome)
   #perform loo also for full combination of modalities
-  out<- foreach (fold_index = 1:nrow(df_training), 
+  out<- foreach (fold_index = 1:max(fold), 
                  .inorder = FALSE, 
                  .packages = c("tidyverse","dplyr", "Biocomb", "RWeka"),
                  .export = c( "SMO_classifier", "list_of_modalities", "outcome", "fold_to_evaluate"), .combine = "c") %do% {
