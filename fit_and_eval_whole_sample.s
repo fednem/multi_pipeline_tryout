@@ -82,7 +82,9 @@ fit_and_eval <- function(list_of_modalities, outcome) {
     classification <- predict(model_SMO)
     
     
-    accuracy <- data_frame(classification = classification)
+
+    accuracy <- data_frame(classification = classification, ground = outcome_test)
+
     out <- list(all_coordinates, accuracy = accuracy, weights = SMO_weights, data_frame = merged_modalities_df_selected)
     
   }
