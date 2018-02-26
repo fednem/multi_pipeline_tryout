@@ -1,4 +1,4 @@
-fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL) {
+fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL, ...) {
   
   if (length(fold_range) == 0) {up_to_fold <- 1:max(fold_to_evaluate)} else {up_to_fold <- fold_range}
   
@@ -52,7 +52,7 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                  as.numeric(.)
                                
                                 print(paste("clustering, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
-                                coordinates_from_features_colnames <- cluster_voxels(coordinates_from_features_colnames)
+                                coordinates_from_features_colnames <- cluster_voxels(coordinates_from_features_colnames, ...)
                                 
                                 if(nrow(coordinates_from_features_colnames) == 0) {
                                   print("WARNING: this modality has no usable features")
