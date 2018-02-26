@@ -62,8 +62,8 @@ evaluators_calculation <- function(df) {
   performance_table <- table(df$classification, df$ground)
   
   accuracy <- sum(diag(performance_table))/sum(performance_table)
-  sensitivity <- performance_table[2,2]/sum(performance_table[2,])
-  specificity <- performance_table[1,1]/sum(performance_table[1,])
+  sensitivity <- performance_table[2,2]/sum(performance_table[,2])
+  specificity <- performance_table[1,1]/sum(performance_table[,1])
   F1 <- (2*performance_table[2,2])/((2*performance_table[2,2]) + performance_table[1,2] + performance_table[2,1])
   
   evaluation <- c(accuracy = accuracy, sensitivity = sensitivity, specificity = specificity, F1 = F1)
