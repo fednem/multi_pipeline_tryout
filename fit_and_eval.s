@@ -1,4 +1,4 @@
-fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL, subjects_id = NULL ...) {
+fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL, subjects_id = NULL, ...) {
   
   if (length(fold_range) == 0) {up_to_fold <- 1:max(fold_to_evaluate)} else {up_to_fold <- fold_range}
   
