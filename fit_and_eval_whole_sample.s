@@ -1,5 +1,5 @@
 library(spatstat)
-fit_and_eval <- function(list_of_modalities, outcome) {
+fit_and_eval <- function(list_of_modalities, outcome, ...) {
   
   
   SMO_classifier <- make_Weka_classifier("weka/classifiers/functions/SMO")
@@ -40,7 +40,7 @@ fit_and_eval <- function(list_of_modalities, outcome) {
       as.numeric(.)
     
      print(paste("clustering, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
-     coordinates_from_features_colnames <- cluster_voxels(coordinates_from_features_colnames)
+     coordinates_from_features_colnames <- cluster_voxels(coordinates_from_features_colnames, ...)
     
     
      #averaging of clusters

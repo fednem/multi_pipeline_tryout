@@ -57,6 +57,62 @@ output_selected_clusters <- function(output_list, space_defining_image, output_n
 }
 
 
+output_selected_clusters_with_values <- function(output_list, space_defining_image, output_name) {
+  
+  img <- readNIfTI(space_defining_image)
+  
+  img_dim <- dim(img@.Data)
+  
+  folds <- length(output_list)
+  
+  
+  for (fold_index in 1:folds) {
+    
+    modalities <- names(output_list[[fold_index]][[1]])
+    
+    modalities_number <- length(modalities)
+    
+    for (modality_index in 1:modalities_number) { 
+      
+      this_modality <- modalities[modality_index]
+      
+      clusters_number <- sum(str_detect(output_list[[fold_index]]$weights$features_name, this_modality))
+      
+      if(clusters_number == 0){
+        next}
+      
+      suffix <- paste("fold", fold_index, this_modality, sep = "_")
+      
+      this_modality_clusters <- str_subset(output_list[[fold_index]]$weights$features_name, this_modality) %>%
+        str_split(.,"_") %>%
+        map_chr(~`[`(.,2)) %>%
+        as.numeric(.)
+      
+      this_modality_values <- output_list[[fold_index]]$weights$features_weight[output_list[[fold_index]]$weights$features_name %in% str_subset(output_list[[fold_index]]$weights$features_name, this_modality)]
+      
+      selected_clusters <- `[[`(output_list[[fold_index]][[1]], this_modality) %>%
+        filter(., cluster_id %in% this_modality_clusters)
+      
+      new_img <- img
+      new_img@.Data <- array(0,img_dim)
+      
+      for (cl in 1:length(this_modality_clusters)) {
+        new_img@.Data[as.matrix(selected_clusters[selected_clusters$cluster_id == this_modality_clusters[cl], 1:3])] <- this_modality_values[cl]
+        
+      }
+      
+      img_name <- paste(output_name,suffix, sep = "_")
+      
+      writeNIfTI(new_img, paste0(img_name), verbose=TRUE)
+      
+    }
+    
+    
+  }
+  
+}
+
+
 evaluators_calculation <- function(df) {
   
   performance_table <- table(df$classification, df$ground)

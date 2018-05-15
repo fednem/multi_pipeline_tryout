@@ -7,7 +7,8 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
   out <- foreach(fold_index = up_to_fold, .inorder = FALSE, 
                  .packages = c("tidyverse","dplyr", "CORElearn", "spatstat", "numDeriv", "quantmod", "Biocomb", "RWeka"),
                  .export = c("sd_thresholding_for_categorical_outcome_variables_vec", "select_features_relieff_derivatives_threshold_CORElearn",
-                             "extract_weights_from_SMO", "SMO_classifier", "list_of_modalities", "outcome", "fold_to_evaluate")) %do% {
+                             "extract_weights_from_SMO", "SMO_classifier", "list_of_modalities", "outcome", "fold_to_evaluate",
+                             "list_of_modalities_combinations", "select_best_combination_of_modalities")) %do% {
                                
                                all_mods_train <- list()
                                all_relieff_features <- list()
@@ -22,7 +23,7 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                 outcome_train <- outcome[fold != fold_index]
                                 img_dim <- list_of_modalities[[mod]]$img_dim
                                 name_of_mod <- names(list_of_modalities)[[mod]]
-								 if (length(subjects_id) == 0) {training_subjects = NULL
+                                if (length(subjects_id) == 0) {training_subjects = NULL
                                   test_subjects = NULL} else {training_subjects = subjects_id[fold != fold_index]
                                   test_subjects = subjects_id[fold == fold_index]}
                                
@@ -98,12 +99,18 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                  all_mods_train <- all_mods_train[-which(is.na(all_mods_train))]}
                                
                                 merged_modalities_df <- Reduce(bind_cols, all_mods_train)
+                                
                                
-                                merged_modalities_df$outcome <- outcome_train
+                                modalities_combination <- list_of_modalities_combinations(all_mods_train)
+                                
+                                best_combo_dataframe <- select_best_combination_of_modalities(modalities_combination,
+                                                                                              merged_modalities_df, outcome_train)
+                                
+                                best_combo_string <- best_combo_dataframe$best_combo
+                                
+                                best_combo_dataframe <- best_combo_dataframe$final_df
                                
-                                merged_modalities_df_selected <- merged_modalities_df %>%
-                                 select(., select.cfs(merged_modalities_df)$Index, outcome)
-                               
+                                
                                 rm(merged_modalities_df)
                                
                                #cluster and select test set
@@ -145,11 +152,11 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                               
                               
                                merged_modalities_df_test <- Reduce(bind_cols, all_mods_test) %>%
-                                 select(., head(colnames(merged_modalities_df_selected),-1))
+                                 select(., head(colnames(best_combo_dataframe),-1))
                                
                                
                                
-                               model_SMO <- SMO_classifier(as.factor(outcome) ~ ., data = merged_modalities_df_selected)
+                               model_SMO <- SMO_classifier(as.factor(outcome) ~ ., data = best_combo_dataframe)
                                
                                SMO_weights <- extract_weights_from_SMO(model_SMO)
                                
@@ -157,8 +164,13 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                
                                
                                accuracy <- data_frame(classification = classification, ground = outcome_test)
-							   fold_subjects <- list(test_subjects = test_subjects, training_subjects = training_subjects)
-                               out <- list(all_coordinates, accuracy = accuracy, weights = SMO_weights)
+                               
+                               fold_subjects <- list(test_subjects = test_subjects, training_subjects = training_subjects)
+                               out <- list(all_coordinates, 
+                                           accuracy = accuracy, 
+                                           weights = SMO_weights, 
+                                           fold_subjects = fold_subjects,
+                                           selected_combo = best_combo_string)
                                
                              }
   
