@@ -105,6 +105,10 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                 
                                 best_combo_dataframe <- select_best_combination_of_modalities(modalities_combination,
                                                                                               merged_modalities_df, outcome_train)
+                                
+                                best_combo_string <- best_combo_dataframe$best_combo
+                                
+                                best_combo_dataframe <- best_combo_dataframe$final_df
                                
                                 
                                 rm(merged_modalities_df)
@@ -162,7 +166,11 @@ fit_and_eval <- function(list_of_modalities, outcome, fold_to_evaluate, fold_ran
                                accuracy <- data_frame(classification = classification, ground = outcome_test)
                                
                                fold_subjects <- list(test_subjects = test_subjects, training_subjects = training_subjects)
-                               out <- list(all_coordinates, accuracy = accuracy, weights = SMO_weights, fold_subjects = fold_subjects)
+                               out <- list(all_coordinates, 
+                                           accuracy = accuracy, 
+                                           weights = SMO_weights, 
+                                           fold_subjects = fold_subjects,
+                                           selected_combo = best_combo_string)
                                
                              }
   

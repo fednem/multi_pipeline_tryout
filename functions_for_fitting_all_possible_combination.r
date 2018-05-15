@@ -112,6 +112,6 @@ select_best_combination_of_modalities <- function(vector_of_combinations, df_tra
   
   final_training_df_selected <- final_training_df %>%
     select(., c(select.cfs(.)$Index, ncol(.)))
-  return(final_training_df_selected)
+  return(list(final_df = final_training_df_selected, best_combo = best_combo))
   
 }
