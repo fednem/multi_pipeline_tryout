@@ -1,4 +1,4 @@
-fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL) {
+fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate, fold_range = NULL, subjects_id = NULL, ...) {
   
   if (length(fold_range) == 0) {up_to_fold <- 1:max(fold_to_evaluate)} else {up_to_fold <- fold_range}
   
@@ -22,6 +22,9 @@ fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate
                                 outcome_train <- outcome[fold != fold_index]
                                 img_dim <- list_of_modalities[[mod]]$img_dim
                                 name_of_mod <- names(list_of_modalities)[[mod]]
+                                if (length(subjects_id) == 0) {training_subjects = NULL
+                                  test_subjects = NULL} else {training_subjects = subjects_id[fold != fold_index]
+                                                              test_subjects = subjects_id[fold == fold_index]}
                                
                                 #variance thresholding
                                 print(paste("variance thresholding, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
@@ -52,7 +55,7 @@ fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate
                                  as.numeric(.)
                                
                                 print(paste("clustering, modality is", name_of_mod, "modality", mod, "of", length(list_of_modalities), sep = " "))
-                                coordinates_from_features_colnames <- cluster_voxels(coordinates_from_features_colnames)
+                                coordinates_from_features_colnames <- cluster_voxels(coordinates_from_features_colnames, ...)
                                 
                                 if(nrow(coordinates_from_features_colnames) == 0) {
                                   print("WARNING: this modality has no usable features")
@@ -153,6 +156,7 @@ fit_and_eval_continuos <- function(list_of_modalities, outcome, fold_to_evaluate
                                
                                
                                accuracy <- data_frame(classification = classification, ground = outcome_test)
+                               fold_subjects <- list(test_subjects = test_subjects, training_subjects = training_subjects)
                                out <- list(all_coordinates, accuracy = accuracy, weights = SMO_weights)
                                
                              }
